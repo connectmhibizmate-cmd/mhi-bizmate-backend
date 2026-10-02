@@ -8,3 +8,18 @@ import { env } from "../config/env.js";
 export const supabase = createClient(env.supabaseUrl, env.supabaseServiceRoleKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
+
+let readinessPromise = null;
+let readinessExpiresAt = 0;
+export function checkAuthReadiness() {
+  if (!readinessPromise || Date.now() >= readinessExpiresAt) {
+    readinessExpiresAt = Date.now() + 30000;
+    readinessPromise = supabase.auth.admin.listUsers({ page: 1, perPage: 1 }).then(({ error }) => {
+      if (!error) return { ready: true };
+      const configurationError = error.status === 401 || error.status === 403;
+      console.error("[AUTH] Provider readiness failed", { status: error.status, code: error.code });
+      return { ready: false, code: configurationError ? "AUTH_CONFIGURATION_ERROR" : "AUTH_SERVICE_UNAVAILABLE" };
+    }).catch(() => ({ ready: false, code: "AUTH_SERVICE_UNAVAILABLE" }));
+  }
+  return readinessPromise;
+}

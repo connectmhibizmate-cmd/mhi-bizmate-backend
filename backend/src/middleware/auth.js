@@ -2,7 +2,7 @@
 // Validates the Supabase access token server-side via supabase.auth.getUser(),
 // then resolves the user's workspace + role independently (never trusts the
 // client). Attaches the resolved context to req.ctx.
-import { supabase } from "../lib/supabaseClient.js";
+import { supabase, checkAuthReadiness } from "../lib/supabaseClient.js";
 import { resolveContext } from "../lib/workspace.js";
 import { AuthError } from "../lib/errors.js";
 
@@ -17,6 +17,15 @@ export async function authMiddleware(req, res, next) {
     // Validate the token against Supabase Auth
     const { data: userData, error: uErr } = await supabase.auth.getUser(token);
     if (uErr || !userData?.user) {
+      // A broken provider configuration is not an expired user session.
+      const readiness = await checkAuthReadiness();
+      if (!readiness.ready) {
+        const message = readiness.code === "AUTH_CONFIGURATION_ERROR"
+          ? "Server login configuration needs to be corrected."
+          : "Login verification is temporarily unavailable.";
+        return res.status(503).json({ error: message, code: readiness.code, requestId: req.id });
+      }
+      console.warn("[AUTH] Session rejected", { status: uErr?.status, code: uErr?.code, requestId: req.id });
       throw new AuthError("Invalid or expired session.");
     }
 

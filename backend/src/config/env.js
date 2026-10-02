@@ -4,7 +4,10 @@ import dotenv from "dotenv";
 dotenv.config();
 
 function required(name) {
-  const v = process.env[name];
+  const raw = process.env[name]?.trim();
+  const v = raw && ((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'")))
+    ? raw.slice(1, -1).trim()
+    : raw;
   if (!v) {
     console.error(`[CONFIG] Missing required environment variable: ${name}`);
     process.exit(1);

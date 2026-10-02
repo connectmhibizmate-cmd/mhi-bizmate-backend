@@ -7,6 +7,7 @@ import { requestIdMiddleware } from "./middleware/requestId.js";
 import { apiRateLimiter } from "./middleware/rateLimit.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { v1Router } from "./routes/v1/index.js";
+import { checkAuthReadiness } from "./lib/supabaseClient.js";
 
 const app = express();
 
@@ -18,8 +19,15 @@ app.use(corsMiddleware);
 app.use(requestIdMiddleware);
 
 // ---- Health check (no auth) ----
-app.get("/health", (req, res) => {
-  res.json({ status: "ok", service: "heart-of-bizmate", timestamp: new Date().toISOString() });
+app.get("/health", apiRateLimiter, async (req, res) => {
+  const readiness = await checkAuthReadiness();
+  res.status(readiness.ready ? 200 : 503).json({
+    status: readiness.ready ? "ok" : "degraded",
+    service: "heart-of-bizmate",
+    timestamp: new Date().toISOString(),
+    authentication: readiness.ready ? "ready" : "unavailable",
+    ...(readiness.code ? { code: readiness.code } : {}),
+  });
 });
 
 // ---- API v1 ----
