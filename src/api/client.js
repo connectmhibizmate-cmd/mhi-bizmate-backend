@@ -10,23 +10,15 @@
 // SECURITY: No secrets, no service-role keys, no Meta/AI/payment credentials
 // live here. The frontend never receives sensitive credentials.
 
-// Environment-based backend configuration (Step 1 — Frontend/Backend Contract Lock).
-// When VITE_BACKEND_URL is set (app dashboard → Secrets), the API layer switches to
-// the "backend" driver and routes through the secure Heart of BizMate API. When
-// unset, the app stays in offline/preview mode (current state). DO NOT hardcode a
-// production URL here — set it via the dashboard Secrets page when the backend is
-// ready. No code changes will be required at that time.
-const ENV_BACKEND_URL =
-  (typeof import.meta !== "undefined" &&
-    import.meta.env &&
-    import.meta.env.VITE_BACKEND_URL) ||
-  "";
-export const API_BASE_URL = ENV_BACKEND_URL;
-export const BACKEND_URL = ENV_BACKEND_URL;
-export const HAS_BACKEND = Boolean(ENV_BACKEND_URL);
+// Backend URL configuration — embedded directly (Base44 build pipeline does not
+// inject .env into the frontend bundle). See src/api/backendConfig.js.
+import { BACKEND_URL, HAS_BACKEND } from "./backendConfig";
+
+export const API_BASE_URL = BACKEND_URL;
+export { BACKEND_URL, HAS_BACKEND };
 export const API_DRIVER = HAS_BACKEND ? "backend" : "offline";
-export const FUNCTIONS_URL = ENV_BACKEND_URL ? `${ENV_BACKEND_URL}/functions` : "";
-export const USE_EDGE_FUNCTIONS = Boolean(ENV_BACKEND_URL);
+export const FUNCTIONS_URL = BACKEND_URL ? `${BACKEND_URL}/functions` : "";
+export const USE_EDGE_FUNCTIONS = HAS_BACKEND;
 
 export const base44 = null;
 
