@@ -26,7 +26,8 @@ app.get("/health", apiRateLimiter, async (req, res) => {
     service: "heart-of-bizmate",
     timestamp: new Date().toISOString(),
     authentication: readiness.ready ? "ready" : "unavailable",
-    ...(readiness.code ? { code: readiness.code } : {}),
+    authenticationProject: new URL(env.supabaseUrl).hostname,
+    ...(readiness.code ? { code: readiness.code, providerStatus: readiness.providerStatus, reason: readiness.reason } : {}),
   });
 });
 

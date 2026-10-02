@@ -18,8 +18,13 @@ export function checkAuthReadiness() {
       if (!error) return { ready: true };
       const configurationError = error.status === 401 || error.status === 403;
       console.error("[AUTH] Provider readiness failed", { status: error.status, code: error.code });
-      return { ready: false, code: configurationError ? "AUTH_CONFIGURATION_ERROR" : "AUTH_SERVICE_UNAVAILABLE" };
-    }).catch(() => ({ ready: false, code: "AUTH_SERVICE_UNAVAILABLE" }));
+      return {
+        ready: false,
+        code: configurationError ? "AUTH_CONFIGURATION_ERROR" : "AUTH_SERVICE_UNAVAILABLE",
+        providerStatus: Number.isFinite(error.status) ? error.status : null,
+        reason: error.name === "AuthRetryableFetchError" ? "provider_unreachable" : "provider_request_failed",
+      };
+    }).catch(() => ({ ready: false, code: "AUTH_SERVICE_UNAVAILABLE", providerStatus: null, reason: "provider_request_failed" }));
   }
   return readinessPromise;
 }
