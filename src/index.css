@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* MHI BizMate — deep navy / neon cyan fintech theme */
+    --background: 211 86% 9%;
+    --foreground: 0 0% 100%;
+    --card: 212 74% 14%;
+    --card-foreground: 0 0% 100%;
+    --popover: 212 74% 14%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 188 100% 48%;
+    --primary-foreground: 211 86% 9%;
+    --secondary: 205 100% 47%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 212 44% 18%;
+    --muted-foreground: 211 30% 66%;
+    --accent: 205 100% 47%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --success: 142 76% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 95% 55%;
+    --warning-foreground: 0 0% 10%;
+    --border: 200 60% 26%;
+    --input: 200 60% 26%;
+    --ring: 188 100% 48%;
+    --chart-1: 188 100% 48%;
+    --chart-2: 205 100% 47%;
+    --chart-3: 142 76% 45%;
+    --chart-4: 38 95% 55%;
+    --chart-5: 280 65% 60%;
+    --radius: 0.75rem;
+    --font-heading: ui-sans-serif, system-ui, sans-serif;
+    --font-body: ui-sans-serif, system-ui, sans-serif;
+    --font-display: ui-sans-serif, system-ui, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --sidebar-background: 211 86% 9%;
+    --sidebar-foreground: 211 30% 66%;
+    --sidebar-primary: 188 100% 48%;
+    --sidebar-primary-foreground: 211 86% 9%;
+    --sidebar-accent: 212 44% 18%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 200 60% 26%;
+    --sidebar-ring: 188 100% 48%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+}
+
+@layer utilities {
+  .glow-cyan {
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.4), 0 0 18px hsl(var(--primary) / 0.35);
+  }
+  .glow-cyan-soft {
+    box-shadow: 0 0 14px hsl(var(--primary) / 0.18);
+  }
+  .text-glow {
+    text-shadow: 0 0 12px hsl(var(--primary) / 0.45);
+  }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+}

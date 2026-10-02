@@ -1,0 +1,19 @@
+{
+  "name": "mhi-bizmate-backend",
+  "version": "1.0.0",
+  "description": "Heart of BizMate — independent secure backend API for MHI BizMate",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.117.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.18.3",
+    "express-rate-limit": "^7.2.0",
+    "helmet": "^7.1.0"
+  }
+}

@@ -1,0 +1,53 @@
+// MHI BizMate — Heart of BizMate: Action type definitions.
+// Every important business mutation is a named, validated action. AI requests
+// are PROPOSALS that the Heart validates before executing.
+
+export const ACTIONS = {
+  // Customer actions
+  CREATE_CUSTOMER: "CREATE_CUSTOMER",
+  UPDATE_CUSTOMER: "UPDATE_CUSTOMER",
+  DELETE_CUSTOMER: "DELETE_CUSTOMER",
+
+  // Product actions
+  CREATE_PRODUCT: "CREATE_PRODUCT",
+  UPDATE_PRODUCT: "UPDATE_PRODUCT",
+  UPDATE_STOCK: "UPDATE_STOCK",
+  DELETE_PRODUCT: "DELETE_PRODUCT",
+
+  // Lead actions
+  CREATE_LEAD: "CREATE_LEAD",
+  UPDATE_LEAD: "UPDATE_LEAD",
+  DELETE_LEAD: "DELETE_LEAD",
+
+  // Order actions
+  CREATE_PENDING_ORDER: "CREATE_PENDING_ORDER",
+  UPDATE_PENDING_ORDER: "UPDATE_PENDING_ORDER",
+  CONFIRM_ORDER: "CONFIRM_ORDER",
+  CANCEL_ORDER: "CANCEL_ORDER",
+  UPDATE_ORDER_STATUS: "UPDATE_ORDER_STATUS",
+
+  // Transaction actions
+  CREATE_TRANSACTION: "CREATE_TRANSACTION",
+  UPDATE_TRANSACTION: "UPDATE_TRANSACTION",
+  DELETE_TRANSACTION: "DELETE_TRANSACTION",
+
+  // Conversation / message actions
+  SEND_MESSAGE: "SEND_MESSAGE",
+
+  // Business profile
+  UPDATE_BUSINESS_PROFILE: "UPDATE_BUSINESS_PROFILE",
+};
+
+// All valid action names for quick lookup
+export const ALL_ACTIONS = Object.values(ACTIONS);
+
+// Actions that AI employees are allowed to propose (customer-facing AI only)
+export const AI_ALLOWED_ACTIONS = new Set([
+  ACTIONS.CREATE_CUSTOMER,
+  ACTIONS.UPDATE_CUSTOMER,
+  ACTIONS.CREATE_LEAD,
+  ACTIONS.UPDATE_LEAD,
+  ACTIONS.CREATE_PENDING_ORDER,
+  ACTIONS.UPDATE_PENDING_ORDER,
+  ACTIONS.SEND_MESSAGE,
+]);

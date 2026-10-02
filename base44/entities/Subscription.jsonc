@@ -1,0 +1,125 @@
+{
+  "name": "Subscription",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "title": "User ID"
+    },
+    "plan_type": {
+      "type": "string",
+      "title": "Plan Type",
+      "enum": [
+        "TRIAL",
+        "FREEMIUM",
+        "STARTER",
+        "BUSINESS",
+        "BUSINESS_PRO"
+      ],
+      "default": "TRIAL"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": [
+        "TRIAL_ACTIVE",
+        "FREEMIUM",
+        "PAYMENT_PENDING",
+        "STARTER",
+        "BUSINESS",
+        "BUSINESS_PRO",
+        "EXPIRED"
+      ],
+      "default": "TRIAL_ACTIVE"
+    },
+    "trial_start_at": {
+      "type": "string",
+      "title": "Trial Start"
+    },
+    "trial_end_at": {
+      "type": "string",
+      "title": "Trial End"
+    },
+    "subscription_start_at": {
+      "type": "string",
+      "title": "Subscription Start"
+    },
+    "subscription_end_at": {
+      "type": "string",
+      "title": "Subscription End"
+    },
+    "requested_plan": {
+      "type": "string",
+      "title": "Requested Plan"
+    },
+    "price": {
+      "type": "number",
+      "title": "Price",
+      "default": 0
+    },
+    "currency": {
+      "type": "string",
+      "title": "Currency",
+      "default": "BDT"
+    },
+    "payment_status": {
+      "type": "string",
+      "title": "Payment Status",
+      "enum": [
+        "NONE",
+        "PENDING",
+        "VERIFIED",
+        "REJECTED"
+      ],
+      "default": "NONE"
+    },
+    "payment_reference": {
+      "type": "string",
+      "title": "Payment Reference"
+    },
+    "payment_method": {
+      "type": "string",
+      "title": "Payment Method"
+    },
+    "payment_amount": {
+      "type": "number",
+      "title": "Payment Amount",
+      "default": 0
+    },
+    "ai_quota_total": {
+      "type": "number",
+      "title": "AI Quota Total",
+      "default": 0
+    },
+    "ai_quota_allocated": {
+      "type": "number",
+      "title": "AI Quota Allocated",
+      "default": 0
+    }
+  },
+  "required": [
+    "user_id"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
