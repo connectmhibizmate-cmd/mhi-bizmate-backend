@@ -20,7 +20,8 @@ export const env = {
   nodeEnv: process.env.NODE_ENV || "development",
   isProd: (process.env.NODE_ENV || "development") === "production",
 
-  supabaseUrl: required("SUPABASE_URL"),
+  // The SDK needs the project origin, not a copied REST/Auth endpoint path.
+  supabaseUrl: new URL(required("SUPABASE_URL")).origin,
   supabaseServiceRoleKey: required("SUPABASE_SERVICE_ROLE_KEY"),
 
   corsOrigins: (process.env.CORS_ALLOWED_ORIGINS || "")
