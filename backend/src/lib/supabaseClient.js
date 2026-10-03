@@ -1,3 +1,6 @@
+import WebSocket from "ws";
+if (!globalThis.WebSocket) globalThis.WebSocket = WebSocket;
+if (!global.WebSocket) global.WebSocket = WebSocket;
 // MHI BizMate — Supabase service-role client (server-side ONLY)
 // This client uses the SERVICE ROLE key and bypasses RLS.
 // It is NEVER imported by the frontend. The Heart of BizMate uses it for all
