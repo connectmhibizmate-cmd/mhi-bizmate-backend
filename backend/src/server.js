@@ -1,3 +1,5 @@
+import { WebSocket as WS } from "ws";
+if (!globalThis.WebSocket) globalThis.WebSocket = WS;
 import express from "express";
 import helmet from "helmet";
 import { env } from "./config/env.js";
@@ -15,17 +17,18 @@ app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(corsMiddleware);
 app.use(requestIdMiddleware);
-app.use("/webhooks/meta", metaRouter);
 
-app.get("/health", apiRateLimiter, async (req, res) => {
-  const r = await checkAuthReadiness();
-  res.status(r.ready ? 200 : 503).json({ status: r.ready ? "ok" : "degraded" });
+app.get("/health", (req, res) => {
+  res.json({ ok: true, timestamp: new Date().toISOString() });
 });
 
 app.use("/api/v1", apiRateLimiter, v1Router);
-app.use((req, res) => res.status(404).json({ error: "Not found" }));
+app.use("/api/meta", metaRouter);
+
 app.use(errorHandler);
 
-const PORT = env.port || process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`Listening on ${PORT}`));
-export default app;
+const port = env.PORT || 3000;
+app.listen(port, async () => {
+  console.log(`Server running on port ${port}`);
+  await checkAuthReadiness();
+});
