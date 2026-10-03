@@ -1,5 +1,4 @@
-import { WebSocket as WS } from "ws";
-if (!globalThis.WebSocket) globalThis.WebSocket = WS;
+import "./polyfill.js";
 import express from "express";
 import helmet from "helmet";
 import { env } from "./config/env.js";
