@@ -32,4 +32,21 @@ export const env = {
   rateLimitWindowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || "60000", 10),
   rateLimitMax: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || "300", 10),
   heartAiRateLimit: parseInt(process.env.HEART_AI_RATE_LIMIT || "60", 10),
+
+  // ---- Meta Connector (Facebook Page + Messenger) ----
+  // All Meta secrets are backend-only. They are NEVER sent to the frontend,
+  // AI models, logs, or audit records.
+  meta: {
+    appId: process.env.META_APP_ID?.trim() || "",
+    appSecret: process.env.META_APP_SECRET?.trim() || "",
+    verifyToken: process.env.META_VERIFY_TOKEN?.trim() || "",
+    redirectUri: process.env.META_REDIRECT_URI?.trim() || "",
+    graphVersion: process.env.META_GRAPH_API_VERSION?.trim() || "v20.0",
+    tokenEncryptionKey: process.env.META_TOKEN_ENCRYPTION_KEY?.trim() || "",
+    isConfigured: Boolean(
+      process.env.META_APP_ID?.trim() &&
+      process.env.META_APP_SECRET?.trim() &&
+      process.env.META_VERIFY_TOKEN?.trim()
+    ),
+  },
 };

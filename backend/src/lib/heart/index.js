@@ -24,16 +24,16 @@ export const transactionHandlers = makeCrudHandler({
   table: "transactions", entityName: "transaction", permissionAction: "CREATE_TRANSACTION",
 });
 export const notificationHandlers = makeCrudHandler({
-  table: "notifications", entityName: "notification", permissionAction: "CREATE_TRANSACTION",
+  table: "notifications", entityName: "notification", permissionAction: "CREATE_NOTIFICATION",
 });
 export const supplierHandlers = makeCrudHandler({
-  table: "suppliers", entityName: "supplier", permissionAction: "CREATE_PRODUCT",
+  table: "suppliers", entityName: "supplier", permissionAction: "CREATE_SUPPLIER",
 });
 export const purchaseHandlers = makeCrudHandler({
-  table: "purchases", entityName: "purchase", permissionAction: "CREATE_PRODUCT",
+  table: "purchases", entityName: "purchase", permissionAction: "CREATE_PURCHASE",
 });
 export const campaignHandlers = makeCrudHandler({
-  table: "campaigns", entityName: "campaign", permissionAction: "CREATE_TRANSACTION",
+  table: "campaigns", entityName: "campaign", permissionAction: "CREATE_CAMPAIGN",
 });
 
 // ---- Business profile handler ----

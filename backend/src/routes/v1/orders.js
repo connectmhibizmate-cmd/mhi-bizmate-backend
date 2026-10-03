@@ -1,6 +1,7 @@
 // MHI BizMate — Orders routes
 import { Router } from "express";
 import { orderHandlers } from "../../lib/heart/orders.js";
+import { withIdempotency } from "../../lib/idempotency.js";
 import { sendData, sendCreated, transformList, transformRow } from "../../lib/response.js";
 
 // Add computed profit field (total - cost_total) to each order
@@ -37,7 +38,13 @@ ordersRouter.get("/:id/items", async (req, res, next) => {
 
 ordersRouter.post("/", async (req, res, next) => {
   try {
-    const result = await orderHandlers.create(req.ctx, req.body);
+    const idempotencyKey = req.headers["idempotency-key"];
+    const result = await withIdempotency(req.ctx, idempotencyKey, "CREATE_ORDER", () =>
+      orderHandlers.create(req.ctx, req.body)
+    );
+    if (result?.__idempotentReplay) {
+      return res.status(result.code || 200).json({ data: result.body, idempotent: true });
+    }
     sendCreated(res, result);
   } catch (e) { next(e); }
 });

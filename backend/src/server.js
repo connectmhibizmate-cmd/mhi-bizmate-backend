@@ -1,4 +1,4 @@
-import "./polyfill.js";
+// MHI BizMate — Heart of BizMate: Express server entry point.
 import express from "express";
 import helmet from "helmet";
 import { env } from "./config/env.js";
@@ -7,27 +7,48 @@ import { requestIdMiddleware } from "./middleware/requestId.js";
 import { apiRateLimiter } from "./middleware/rateLimit.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { v1Router } from "./routes/v1/index.js";
-import metaRouter from "./routes/meta.js";
+import { metaWebhookRouter } from "./routes/webhooks/meta.js";
 import { checkAuthReadiness } from "./lib/supabaseClient.js";
 
 const app = express();
+
+// ---- Security & parsing ----
 app.use(helmet());
+
+// Meta webhooks need the RAW body for signature verification (X-Hub-Signature-256
+// is computed over the raw request body). Mount the webhook router BEFORE the
+// JSON parser, with its own express.raw() middleware (configured in the route).
+app.use("/webhooks", metaWebhookRouter);
+
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(corsMiddleware);
 app.use(requestIdMiddleware);
 
-app.get("/health", (req, res) => {
-  res.json({ ok: true, timestamp: new Date().toISOString() });
+// ---- Health check (no auth) ----
+app.get("/health", apiRateLimiter, async (req, res) => {
+  const readiness = await checkAuthReadiness();
+  res.status(readiness.ready ? 200 : 503).json({
+    status: readiness.ready ? "ok" : "degraded",
+    service: "heart-of-bizmate",
+    timestamp: new Date().toISOString(),
+    authentication: readiness.ready ? "ready" : "unavailable",
+    authenticationProject: new URL(env.supabaseUrl).hostname,
+    ...(readiness.code ? { code: readiness.code, providerStatus: readiness.providerStatus, reason: readiness.reason } : {}),
+  });
 });
 
+// ---- API v1 ----
 app.use("/api/v1", apiRateLimiter, v1Router);
-app.use("/api/meta", metaRouter);
 
+// ---- 404 ----
+app.use((req, res) => {
+  res.status(404).json({ error: "Not found.", code: "NOT_FOUND", requestId: req.id });
+});
+
+// ---- Global error handler ----
 app.use(errorHandler);
 
-const port = env.PORT || 3000;
-app.listen(port, async () => {
-  console.log(`Server running on port ${port}`);
-  await checkAuthReadiness();
+app.listen(env.port, () => {
+  console.log(`[Heart of BizMate] listening on port ${env.port} (${env.nodeEnv})`);
 });

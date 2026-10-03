@@ -42,9 +42,10 @@ cp .env.example .env
 #   CORS_ALLOWED_ORIGINS       — the published app URL
 ```
 
-### 3. Run the database migration
+### 3. Run the database migrations
 
-Run `supabase/migrations/0005_core_business_data.sql` in the Supabase SQL Editor.
+Run migrations `0001` through `0006` in the Supabase SQL Editor (in order).
+Each migration is idempotent (`create table if not exists`, `create or replace function`).
 
 ### 4. Start the server
 
@@ -57,14 +58,12 @@ The API listens on `http://localhost:3001` (or `PORT` in .env).
 
 ### 5. Connect the frontend
 
-In the Base44 dashboard → Secrets, set:
-
-```
-VITE_BACKEND_URL = https://your-backend-host
-```
+The backend URL is embedded in `src/api/backendConfig.js` (Base44's build
+pipeline does not inject `.env` into the frontend bundle). Update
+`BACKEND_URL` there to point to your deployed backend, then republish.
 
 The frontend automatically switches from offline preview stubs to real HTTP
-adapters. No code changes required.
+adapters when `BACKEND_URL` is non-empty. No other code changes required.
 
 ## API Endpoints (v1)
 
