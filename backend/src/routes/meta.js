@@ -5,8 +5,8 @@ router.get("/", (req, res) => {
   const mode = req.query["hub.mode"];
   const token = req.query["hub.verify_token"];
   const challenge = req.query["hub.challenge"];
-  const VERIFY_TOKEN = process.env.META_VERIFY_TOKEN || "bizmate_verify";
-  if (mode === "subscribe" && token === VERIFY_TOKEN) {
+  const VERIFY = process.env.META_VERIFY_TOKEN || "bizmate_verify";
+  if (mode === "subscribe" && token === VERIFY) {
     console.log("WEBHOOK_VERIFIED");
     return res.status(200).send(challenge);
   }
