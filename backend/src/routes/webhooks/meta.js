@@ -15,8 +15,8 @@
 //   - No token, secret, or credential is logged or exposed.
 
 import express from "express";
-import { verifyChallenge, verifySignature, parseWebhookBody, processWebhookPayload } from "../lib/meta/index.js";
-import { MetaError, MetaSignatureInvalidError, MetaWebhookMalformedError } from "../lib/meta/errors.js";
+import { verifyChallenge, verifySignature, parseWebhookBody, processWebhookPayload } from "../../lib/meta/index.js";
+import { MetaError, MetaSignatureInvalidError, MetaWebhookMalformedError } from "../../lib/meta/errors.js";
 
 export const metaWebhookRouter = express.Router();
 
