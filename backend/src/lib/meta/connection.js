@@ -74,6 +74,15 @@ export async function connectPage(ctx, pageId) {
     .single();
 
   if (error) {
+    // 23505 from the unique partial indexes means either another page is
+    // already active for this workspace, or this page is already active for
+    // a different workspace. Both are isolation violations — fail clearly.
+    if (error.code === "23505") {
+      throw new MetaError(
+        "This Facebook Page cannot be activated. Either another Page is already active for this workspace (use Change Page), or this Page is already connected to another workspace.",
+        "PAGE_CONFLICT"
+      );
+    }
     throw new MetaError("Failed to connect page.", "API_ERROR", { details: error.message });
   }
 

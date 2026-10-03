@@ -67,43 +67,57 @@ export async function replyMessengerMessage(ctx, recipientPsId, message, correla
     throw new MetaError("No active Facebook page connected.", "INACTIVE_PAGE");
   }
 
-  // Idempotency: check if this exact message was already sent recently
-  // (prevents duplicate replies from webhook replays)
+  // Idempotency: claim the reply slot atomically. If a record already exists
+  // for this exact (page, recipient, message) triple, do NOT send again —
+  // this prevents duplicate replies from webhook replays or concurrent
+  // processing. The claim is inserted with status 'processing' and only
+  // moved to 'processed' once Meta confirms the send succeeded.
   const dedupKey = `${page.pageId}:${recipientPsId}:${_hashMessage(message)}`;
   const { data: existing } = await supabase
     .from("meta_webhook_events")
-    .select("id")
+    .select("id, status")
     .eq("external_event_id", dedupKey)
     .eq("source", "meta_reply")
     .maybeSingle();
 
   if (existing) {
-    // Already sent — don't send again
-    return { sent: true, messageId: null, deduplicated: true };
+    // Already claimed/sent — don't send again (safe against duplicates).
+    return { sent: existing.status === "processed", messageId: null, deduplicated: true };
   }
 
-  // Record the reply intent for deduplication
-  await supabase.from("meta_webhook_events").insert({
+  // Record the reply intent (claim) — NOT yet successful.
+  const { error: claimError } = await supabase.from("meta_webhook_events").insert({
     workspace_id: ctx.workspaceId,
     external_event_id: dedupKey,
     event_type: "messenger_reply",
     source: "meta_reply",
-    status: "processed",
+    status: "processing",
     correlation_id: correlationId,
   });
 
+  if (claimError && claimError.code !== "23505") {
+    // Best-effort: if the claim insert failed for a non-duplicate reason,
+    // proceed without dedup protection rather than blocking the reply.
+    console.error("[META] Reply dedup claim failed:", claimError.message);
+  }
+
   try {
     const result = await sendMessengerMessage(page.pageId, recipientPsId, message, page.pageToken);
+    // Meta confirmed success — mark the reply as processed.
+    await supabase
+      .from("meta_webhook_events")
+      .update({ status: "processed" })
+      .eq("external_event_id", dedupKey)
+      .eq("source", "meta_reply");
     await _logReply(ctx, "messenger_reply", recipientPsId, page.pageId, message, true, null, correlationId);
     return { sent: true, messageId: result?.message_id || result?.recipient_id || null };
   } catch (e) {
-    // Update the dedup record to failed
+    // Meta rejected the send — mark the reply as failed (NOT processed).
     await supabase
       .from("meta_webhook_events")
       .update({ status: "failed" })
       .eq("external_event_id", dedupKey)
       .eq("source", "meta_reply");
-
     await _logReply(ctx, "messenger_reply", recipientPsId, page.pageId, message, false, e.category, correlationId);
     throw e instanceof MetaError ? e : new MetaReplyFailedError(e.message);
   }

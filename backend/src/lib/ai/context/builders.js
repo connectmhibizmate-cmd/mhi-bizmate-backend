@@ -87,7 +87,9 @@ export async function buildConversationContext(ctx, input = {}) {
 }
 
 // Lead context: for Messenger AI lead management.
-// Input: { leadId?, status?, limit? }
+// Input: { leadId?, customerId?, status?, limit? }
+// SECURITY: when customerId is provided, leads are restricted to that customer
+// only — never load workspace-wide leads for a customer-specific AI task.
 export async function buildLeadContext(ctx, input = {}) {
   let query = supabase
     .from("leads")
@@ -96,9 +98,14 @@ export async function buildLeadContext(ctx, input = {}) {
 
   if (input.leadId) {
     query = query.eq("id", input.leadId).limit(1);
-  } else {
+  } else if (input.customerId) {
+    // Customer-scoped: only this customer's leads.
+    query = query.eq("customer_id", input.customerId);
     if (input.status) query = query.eq("status", input.status);
     query = query.limit(input.limit || 20);
+  } else {
+    // No customer context — return empty to avoid cross-customer leakage.
+    return { leads: [] };
   }
   const { data, error } = await query;
   if (error) return { leads: [], error: "Failed to load leads" };
@@ -107,6 +114,9 @@ export async function buildLeadContext(ctx, input = {}) {
 
 // Pending order context: for order confirmation automation.
 // Input: { orderId?, customerId?, limit? }
+// SECURITY: when customerId is provided (and no specific orderId), pending
+// orders are restricted to that customer only — never load workspace-wide
+// pending orders for a customer-specific AI task.
 export async function buildPendingOrderContext(ctx, input = {}) {
   let query = supabase
     .from("orders")
@@ -115,8 +125,12 @@ export async function buildPendingOrderContext(ctx, input = {}) {
 
   if (input.orderId) {
     query = query.eq("id", input.orderId).limit(1);
+  } else if (input.customerId) {
+    // Customer-scoped: only this customer's pending orders.
+    query = query.eq("customer_id", input.customerId).eq("status", "Pending").limit(input.limit || 10);
   } else {
-    query = query.eq("status", "Pending").limit(input.limit || 10);
+    // No customer context — return empty to avoid cross-customer leakage.
+    return { orders: [], items: [] };
   }
   const { data: orders, error } = await query;
   if (error) return { orders: [], error: "Failed to load orders" };

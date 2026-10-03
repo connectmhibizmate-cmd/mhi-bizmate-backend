@@ -35,6 +35,34 @@ export const CREATE_LEAD_SCHEMA = {
   additionalProperties: false,
 };
 
+// CREATE_CUSTOMER — aligned with customers table + customerHandlers.create()
+// Used by the Messenger AI to create a new customer through the Heart when no
+// existing identity match is found. facebook_id ties the customer to the
+// verified Meta sender identity; the DB unique partial index prevents
+// duplicates under repeated webhook delivery.
+export const CREATE_CUSTOMER_SCHEMA = {
+  type: "object",
+  properties: {
+    action: { type: "string", const: "CREATE_CUSTOMER" },
+    data: {
+      type: "object",
+      properties: {
+        name: { type: "string", minLength: 1, maxLength: 200 },
+        phone: { type: "string", maxLength: 30 },
+        facebook_id: { type: "string", maxLength: 100 },
+        email: { type: "string", maxLength: 200 },
+        address: { type: "string", maxLength: 500 },
+        type: { type: "string", enum: ["Individual", "Retailer", "Wholesaler", "Distributor"] },
+        notes: { type: "string", maxLength: 2000 },
+      },
+      required: ["name"],
+      additionalProperties: false,
+    },
+  },
+  required: ["action", "data"],
+  additionalProperties: false,
+};
+
 // UPDATE_CUSTOMER — aligned with customers table + customerHandlers.update()
 export const UPDATE_CUSTOMER_SCHEMA = {
   type: "object",
@@ -199,6 +227,7 @@ export const CONVERSATION_RESPONSE_SCHEMA = {
 };
 
 export const ACTION_SCHEMAS = {
+  CREATE_CUSTOMER: CREATE_CUSTOMER_SCHEMA,
   CREATE_LEAD: CREATE_LEAD_SCHEMA,
   UPDATE_CUSTOMER: UPDATE_CUSTOMER_SCHEMA,
   CREATE_PENDING_ORDER: CREATE_PENDING_ORDER_SCHEMA,

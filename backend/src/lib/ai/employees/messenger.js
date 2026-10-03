@@ -9,10 +9,12 @@
 // It collects only required information, manages leads, and creates PENDING
 // orders — never confirmed orders. The owner must approve.
 //
-// ALLOWED ACTIONS: CREATE_LEAD, UPDATE_LEAD, UPDATE_CUSTOMER,
-//   CREATE_PENDING_ORDER, UPDATE_PENDING_ORDER.
-//   REQUEST_ORDER_CONFIRMATION and SCHEDULE_FOLLOWUP are NOT enabled because
-//   the existing Heart contracts do not support them yet.
+// ALLOWED ACTIONS: CREATE_CUSTOMER, UPDATE_CUSTOMER, CREATE_LEAD,
+//   UPDATE_LEAD, CREATE_PENDING_ORDER, UPDATE_PENDING_ORDER.
+//   CREATE_CUSTOMER is included so a brand-new Facebook user can be safely
+//   registered through the Heart before any order/lead action that needs a
+//   customer_id. CONFIRM_ORDER is NEVER allowed — purchase intent only
+//   creates PENDING orders.
 
 import { AiEmployee } from "./base.js";
 import {
@@ -31,6 +33,7 @@ export const messengerAI = new AiEmployee({
   audience: "customer",
   outputMode: "structured",
   allowedActions: [
+    ACTIONS.CREATE_CUSTOMER,
     ACTIONS.CREATE_LEAD,
     ACTIONS.UPDATE_LEAD,
     ACTIONS.UPDATE_CUSTOMER,
@@ -48,9 +51,11 @@ export const messengerAI = new AiEmployee({
   ],
 
   contextBuilder: async (ctx, input) => {
-    // Messenger AI needs: conversation history, customer profile, relevant
-    // products, existing leads, and pending orders for this customer.
-    const [conv, customer, leads, pendingOrders] = await Promise.all([
+    // STEP 1: Resolve conversation + customer identity FIRST.
+    // Customer-dependent contexts (leads, pending orders) can only be loaded
+    // after the customer identity is safely established — otherwise they would
+    // reference an undefined customer and leak cross-customer data.
+    const [conv, customerResult] = await Promise.all([
       buildConversationContext(ctx, {
         conversationId: input.conversationId,
         messageLimit: 15,
@@ -61,17 +66,20 @@ export const messengerAI = new AiEmployee({
         customerId: input.customerId,
         limit: 1,
       }),
-      buildLeadContext(ctx, {
-        status: input.leadStatus,
-        limit: 5,
-      }),
-      buildPendingOrderContext(ctx, {
-        customerId: customer?.customers?.[0]?.id,
-        limit: 3,
-      }),
     ]);
 
-    const cust = customer.customers[0] || null;
+    const cust = customerResult.customers[0] || null;
+    const customerId = cust?.id || null;
+
+    // STEP 2: Only load customer-dependent contexts when a customer is
+    // identified. If no customer exists yet, these return empty — the AI
+    // should propose CREATE_CUSTOMER through the Heart.
+    const [leads, pendingOrders] = customerId
+      ? await Promise.all([
+          buildLeadContext(ctx, { customerId, limit: 5 }),
+          buildPendingOrderContext(ctx, { customerId, limit: 3 }),
+        ])
+      : [{ leads: [] }, { orders: [] }];
 
     // If a product was discussed, load it for context
     const products = input.productId
@@ -127,11 +135,14 @@ ORDER INTENT (CRITICAL RULE):
 - কাস্টমারকে বলবেন "আপনার অর্ডারটি পেন্ডিং করা হয়েছে, আমরা শীঘ্রই কনফার্ম করবো।" — কখনো "অর্ডার কনফার্ম হয়ে গেছে" বলবেন না।
 - For CREATE_PENDING_ORDER, data must include: customer_id, items [{product_id, quantity}], and optionally discount, delivery_charge, payment_status, notes.
 
-CUSTOMER IDENTITY:
+CUSTOMER IDENTITY (CRITICAL):
 - Use the existing customer matching system. Do not create duplicate customers.
-- If a customer is already identified (by facebook_id or phone), use UPDATE_CUSTOMER.
-- Only create a new customer if no match exists and enough information is collected.
+- If a customer is already identified in the context (by facebook_id or phone), use UPDATE_CUSTOMER.
+- If NO customer exists in the context and you have at least the customer's name (from the conversation or Meta identity), propose CREATE_CUSTOMER with the facebook_id from the Meta identity and the name. Never invent a facebook_id — use the one provided in the context/identity.
+- Only create a new customer if no match exists and enough information is collected (at minimum a name).
 - If identity is uncertain, do not make an unsafe assumption — ask the customer.
+- Never use another customer's record as a fallback. Never invent a customer_id.
+- CREATE_PENDING_ORDER requires a valid existing customer_id. If the customer does not exist yet, create the customer first (CREATE_CUSTOMER), then on the next turn create the pending order.
 
 PRODUCT KNOWLEDGE SAFETY (CRITICAL):
 - Product facts must come from the provided product data ONLY.
@@ -169,6 +180,7 @@ OUTPUT FORMAT:
 - Always respond with JSON: { "reply": "<Bangla reply>", "action": "<ACTION>" or null, "data": {<payload> or null} }
 - If no action is needed (just a conversational reply), set "action" to null.
 - For business mutations, "action" and "data" are mandatory.
-- Allowed actions: CREATE_LEAD, UPDATE_LEAD, UPDATE_CUSTOMER, CREATE_PENDING_ORDER, UPDATE_PENDING_ORDER.
+- Allowed actions: CREATE_CUSTOMER, CREATE_LEAD, UPDATE_LEAD, UPDATE_CUSTOMER, CREATE_PENDING_ORDER, UPDATE_PENDING_ORDER.
+- For CREATE_CUSTOMER, data must include: { "name": "<customer name>", "facebook_id": "<from Meta identity>", "phone": "<if known>", "address": "<if known>" }
 - You operate through the Heart of BizMate — all actions are proposals that the Heart validates.`,
 });
