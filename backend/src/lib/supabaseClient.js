@@ -2,8 +2,25 @@
 // This client uses the SERVICE ROLE key and bypasses RLS.
 // It is NEVER imported by the frontend. The Heart of BizMate uses it for all
 // privileged database operations after authorization + business-rule validation.
+//
+// Node.js 20 has no native global WebSocket (added in Node 22).
+// @supabase/supabase-js v2 eagerly initializes its RealtimeClient inside
+// createClient(), which throws "Node.js detected but native WebSocket not
+// found" when no WebSocket implementation is available. This backend never
+// uses realtime subscriptions, but the constructor still requires a
+// WebSocket class to exist, so we polyfill it from `ws`.
+//
+// ESM import order: `ws` is imported first so its module is evaluated before
+// @supabase/supabase-js. The polyfill is then set on globalThis before
+// createClient() is called, ensuring the RealtimeClient constructor finds
+// a WebSocket implementation.
+import { WebSocket as WS } from "ws";
 import { createClient } from "@supabase/supabase-js";
 import { env } from "../config/env.js";
+
+if (!globalThis.WebSocket) {
+  globalThis.WebSocket = WS;
+}
 
 export const supabase = createClient(env.supabaseUrl, env.supabaseServiceRoleKey, {
   auth: { autoRefreshToken: false, persistSession: false },
