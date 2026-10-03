@@ -1,4 +1,3 @@
-// MHI BizMate - Heart of BizMate: Express server entry point.
 import express from "express";
 import helmet from "helmet";
 import { env } from "./config/env.js";
@@ -11,8 +10,6 @@ import metaRouter from "./routes/meta.js";
 import { checkAuthReadiness } from "./lib/supabaseClient.js";
 
 const app = express();
-
-// ---- Security & parsing ----
 app.use(helmet());
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
@@ -20,28 +17,15 @@ app.use(corsMiddleware);
 app.use(requestIdMiddleware);
 app.use("/webhooks/meta", metaRouter);
 
-// ---- Health check (no auth) ----
 app.get("/health", apiRateLimiter, async (req, res) => {
-  const readiness = await checkAuthReadiness();
-  res.status(readiness.ready ? 200 : 503).json({
-    status: readiness.ready ? "ok" : "degraded",
-    service: "heart-of-bizmate",
-    timestamp: new Date().toISOString(),
-    authentication: readiness.ready ? "ready" : "unavailable",
-    authenticationProject: new URL(env.supabaseUrl).hostname,
-    ...(readiness.code ? { code: readiness.code, providerStatus: readiness.providerStatus, reason: readiness.reason } : {}),
-  });
+  const r = await checkAuthReadiness();
+  res.status(r.ready ? 200 : 503).json({ status: r.ready ? "ok" : "degraded" });
 });
 
-// ---- API v1 ----
 app.use("/api/v1", apiRateLimiter, v1Router);
-
-// ---- 404 ----
-app.use((req, res) => {
-  res.status(404).json({ error: "Not found.", code: "NOT_FOUND", requestId: req.id });
-});
-
-// ---- Error handler ----
+app.use((req, res) => res.status(404).json({ error: "Not found" }));
 app.use(errorHandler);
 
+const PORT = env.port || process.env.PORT || 10000;
+app.listen(PORT, () => console.log(`Listening on ${PORT}`));
 export default app;
