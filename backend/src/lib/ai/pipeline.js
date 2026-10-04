@@ -32,6 +32,17 @@ import { validateActionProposal } from "./actions/index.js";
 import { AiError, AiForbiddenActionError } from "./errors.js";
 import { execute as heartExecute } from "../heart/index.js";
 import { CONVERSATION_RESPONSE_SCHEMA } from "./actions/schemas.js";
+import { getConfiguredProviders } from "./providers/index.js";
+
+// Resolve a fallback provider: the first configured provider that is not the
+// primary. This wires the Gateway's existing fallback path so a transient
+// failure on the primary (e.g. Groq rate-limit) transparently retries on the
+// next configured provider (e.g. Gemini) instead of surfacing a 503.
+function _resolveFallback(primaryProviderId) {
+  const configured = getConfiguredProviders();
+  const fallback = configured.find((p) => p.id !== primaryProviderId);
+  return fallback ? fallback.id : null;
+}
 
 // ---- Safe fallback replies (Bangla) for when the Heart rejects an action ----
 // The AI must never tell a customer an action succeeded when it failed.
@@ -57,6 +68,26 @@ function _safeReplyForError(error) {
   return SAFE_FALLBACK_REPLIES.DEFAULT;
 }
 
+// ---- Success note for owner-facing structured actions ----
+// Appends a concise, Bangla success line derived from the Heart's result so
+// the owner sees the real outcome (order number, total) without a frontend
+// change. Only used for owner-audience employees on successful actions.
+function _appendSuccessNote(reply, result) {
+  if (!result || typeof result !== "object") return reply;
+  const notes = [];
+  // Order creation result (heart_create_order RPC returns the order row)
+  if (result.order_number) {
+    const total = Number(result.total || 0);
+    notes.push(`অর্ডার তৈরি হয়েছে — অর্ডার নম্বর: ${result.order_number}${total ? `, টোটাল: ৳${total}` : ""}।`);
+  } else if (result.name) {
+    notes.push(`প্রোডাক্ট যোগ হয়েছে — ${result.name}।`);
+  } else {
+    notes.push("সম্পন্ন হয়েছে।");
+  }
+  const base = (reply || "").trim();
+  return base ? `${base}\n\n${notes.join(" ")}` : notes.join(" ");
+}
+
 // ---- Text mode: for read-only employees (BI AI, Admin Panel AI) ----
 // Returns: { reply, action: null, provider, model, correlationId }
 export async function executeTextTask(employee, ctx, input) {
@@ -70,6 +101,7 @@ export async function executeTextTask(employee, ctx, input) {
     userPrompt,
     model: employee.defaultModel,
     provider: employee.defaultProvider,
+    fallbackProvider: _resolveFallback(employee.defaultProvider),
     temperature: input.temperature ?? 0.4,
     maxTokens: input.maxTokens ?? 2048,
   });
@@ -97,6 +129,7 @@ export async function executeStructuredTask(employee, ctx, input) {
     schema: CONVERSATION_RESPONSE_SCHEMA,
     model: employee.defaultModel,
     provider: employee.defaultProvider,
+    fallbackProvider: _resolveFallback(employee.defaultProvider),
     temperature: input.temperature ?? 0.4,
     maxTokens: input.maxTokens ?? 1024,
   });
@@ -121,8 +154,17 @@ export async function executeStructuredTask(employee, ctx, input) {
     }
   }
 
+  // For owner-facing employees, append a concise success note derived from
+  // the Heart's result so the owner sees the real outcome (e.g. created order
+  // number) without any frontend change. Customer-facing employees are
+  // untouched — their AI reply goes to the customer as-is.
+  let finalReply = aiReply;
+  if (actionOutcome && !actionOutcome.error && employee.audience === "owner") {
+    finalReply = _appendSuccessNote(aiReply, actionOutcome.result);
+  }
+
   return {
-    reply: aiReply,
+    reply: finalReply,
     action: actionOutcome,
     provider: result.provider,
     model: result.model,
@@ -175,10 +217,21 @@ async function _processAction(employee, ctx, action, data) {
 // ---- Internal: build the user prompt from input + context ----
 function _buildUserPrompt(input, context, employee) {
   const parts = [];
+  const userLabel = employee.audience === "owner" ? "Owner" : "Customer";
+
+  // Prior conversation turns (enables multi-turn flows like order creation,
+  // where the AI gathers info and waits for explicit confirmation).
+  if (input.history && Array.isArray(input.history) && input.history.length > 0) {
+    parts.push(`--- Conversation so far ---`);
+    for (const turn of input.history) {
+      const who = turn.role === "user" ? userLabel : "Assistant";
+      parts.push(`${who}: ${turn.content}`);
+    }
+  }
 
   // The task/message from the user
   if (input.message) {
-    parts.push(`Customer message: ${input.message}`);
+    parts.push(`${userLabel} message: ${input.message}`);
   } else if (input.question) {
     parts.push(`Question: ${input.question}`);
   } else if (input.task) {
@@ -195,8 +248,9 @@ function _buildUserPrompt(input, context, employee) {
 
   // Instructions for output format
   if (employee.outputMode === "structured") {
+    const audienceLabel = employee.audience === "owner" ? "the owner" : "the customer";
     parts.push(`\n--- Output format ---`);
-    parts.push(`Respond with a JSON object: { "reply": "<your response to the customer>", "action": "<HEART_ACTION or null>", "data": {<action payload if action is not null> } }`);
+    parts.push(`Respond with a JSON object: { "reply": "<your response to ${audienceLabel}>", "action": "<HEART_ACTION or null>", "data": {<action payload if action is not null> } }`);
     parts.push(`If no business action is needed, set "action" to null and omit "data".`);
     parts.push(`For business mutations, "action" and "data" are mandatory and must match an allowed action schema.`);
   }
