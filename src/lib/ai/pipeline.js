@@ -68,6 +68,8 @@ function _appendSuccessNote(reply, result) {
   if (result.order_number) {
     const total = Number(result.total || 0);
     notes.push(`অর্ডার তৈরি হয়েছে — অর্ডার নম্বর: ${result.order_number}${total ? `, টোটাল: ৳${total}` : ""}।`);
+  } else if (result.name) {
+    notes.push(`প্রোডাক্ট যোগ হয়েছে — ${result.name}।`);
   } else {
     notes.push("সম্পন্ন হয়েছে।");
   }
