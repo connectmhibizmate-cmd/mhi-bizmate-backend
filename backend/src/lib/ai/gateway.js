@@ -33,7 +33,7 @@ import { logAiOperation } from "./usage.js";
 
 const DEFAULT_TIMEOUT = 30000;
 const DEFAULT_MAX_RETRIES = 1;
-const DEFAULT_PREFERENCE = ["gemini", "grok"];
+const DEFAULT_PREFERENCE = ["groq", "gemini", "grok"];
 
 // Generate free-text output from an AI Employee request.
 // Returns: { text, provider, model, usage, correlationId }

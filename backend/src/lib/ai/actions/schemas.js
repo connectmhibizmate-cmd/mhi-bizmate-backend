@@ -210,6 +210,53 @@ export const UPDATE_PRODUCT_SCHEMA = {
   additionalProperties: false,
 };
 
+// CREATE_PRODUCT — aligned with products table + productHandlers.create()
+export const CREATE_PRODUCT_SCHEMA = {
+  type: "object",
+  properties: {
+    action: { type: "string", const: "CREATE_PRODUCT" },
+    data: {
+      type: "object",
+      properties: {
+        name: { type: "string", minLength: 1, maxLength: 200 },
+        description: { type: "string", maxLength: 2000 },
+        sku: { type: "string", maxLength: 100 },
+        category: { type: "string", maxLength: 100 },
+        price: { type: "number", minimum: 0 },
+        cost: { type: "number", minimum: 0 },
+        stock: { type: "integer", minimum: 0 },
+        status: { type: "string", enum: ["active", "archived"] },
+      },
+      required: ["name", "price"],
+      additionalProperties: false,
+    },
+  },
+  required: ["action", "data"],
+  additionalProperties: false,
+};
+
+// CREATE_NOTIFICATION — aligned with notifications table + notificationHandlers.create()
+// Used by the Support AI to escalate an unsolvable user problem to the admin
+// team as a persistent report. Workspace-scoped; no direct database access.
+export const CREATE_NOTIFICATION_SCHEMA = {
+  type: "object",
+  properties: {
+    action: { type: "string", const: "CREATE_NOTIFICATION" },
+    data: {
+      type: "object",
+      properties: {
+        title: { type: "string", minLength: 1, maxLength: 200 },
+        body: { type: "string", maxLength: 2000 },
+        type: { type: "string", maxLength: 50 },
+      },
+      required: ["title"],
+      additionalProperties: false,
+    },
+  },
+  required: ["action", "data"],
+  additionalProperties: false,
+};
+
 // CONVERSATION_RESPONSE — unified output schema for customer-facing employees.
 // The AI returns a conversational reply AND optionally a structured action.
 // If "action" is null/absent, the reply is returned as-is.
@@ -219,7 +266,7 @@ export const CONVERSATION_RESPONSE_SCHEMA = {
   type: "object",
   properties: {
     reply: { type: "string", minLength: 1, maxLength: 2000 },
-    action: { type: "string", maxLength: 50 },
+    action: { type: "string", nullable: true, maxLength: 50 },
     data: { type: "object" },
   },
   required: ["reply"],
@@ -235,4 +282,6 @@ export const ACTION_SCHEMAS = {
   REQUEST_ORDER_CONFIRMATION: REQUEST_ORDER_CONFIRMATION_SCHEMA,
   SCHEDULE_FOLLOWUP: SCHEDULE_FOLLOWUP_SCHEMA,
   UPDATE_PRODUCT: UPDATE_PRODUCT_SCHEMA,
+  CREATE_PRODUCT: CREATE_PRODUCT_SCHEMA,
+  CREATE_NOTIFICATION: CREATE_NOTIFICATION_SCHEMA,
 };

@@ -18,8 +18,8 @@ export const adminPanelAI = new AiEmployee({
   audience: "admin",
   outputMode: "text", // READ-ONLY — no structured actions
   allowedActions: [], // EMPTY — this employee is advisory only
-  defaultProvider: "gemini",
-  defaultModel: "gemini-2.0-flash",
+  defaultProvider: "groq",
+  defaultModel: "openai/gpt-oss-120b",
   taskTypes: [
     "user_support",
     "system_status",

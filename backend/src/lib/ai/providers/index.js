@@ -10,8 +10,9 @@
 
 import { GeminiAdapter } from "./gemini.js";
 import { GrokAdapter } from "./grok.js";
+import { GroqAdapter } from "./groq.js";
 
-const _providers = [new GeminiAdapter(), new GrokAdapter()];
+const _providers = [new GeminiAdapter(), new GrokAdapter(), new GroqAdapter()];
 const _byId = new Map(_providers.map((p) => [p.id, p]));
 
 export function listProviders() {

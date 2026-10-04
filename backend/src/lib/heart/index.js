@@ -100,6 +100,10 @@ export async function execute(action, ctx, data = {}) {
       return orderHandlers.create(ctx, data);
     case ACTIONS.UPDATE_PENDING_ORDER:
       return orderHandlers.update(ctx, data.id, data);
+    case ACTIONS.CREATE_PRODUCT:
+      return productHandlers.create(ctx, data);
+    case ACTIONS.CREATE_NOTIFICATION:
+      return notificationHandlers.create(ctx, data);
     case ACTIONS.SEND_MESSAGE:
       // Message sending is a placeholder — Meta integration comes in a later step
       throw new HeartError("Message sending is not yet available. Meta integration is pending.");

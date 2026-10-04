@@ -9,26 +9,22 @@ import { AuthError, ForbiddenError } from "./errors.js";
 export async function resolveContext(userId) {
   if (!userId) throw new AuthError();
 
-  // 1. Fetch the user's profile (email, full_name, platform_role, status)
-  const { data: profile, error: pErr } = await supabase
-    .from("profiles")
-    .select("id, email, full_name, status, platform_role")
-    .eq("id", userId)
-    .maybeSingle();
+  // Independent authoritative reads run together; every access check still runs.
+  const [profileResult, membershipResult] = await Promise.all([
+    supabase.from("profiles")
+      .select("id, email, full_name, status, platform_role")
+      .eq("id", userId).maybeSingle(),
+    supabase.from("workspace_members")
+      .select("workspace_id, role, status")
+      .eq("user_id", userId).eq("status", "active").maybeSingle(),
+  ]);
+  const { data: profile, error: pErr } = profileResult;
+  const { data: membership, error: mErr } = membershipResult;
   if (pErr) throw new Error(`Profile lookup failed: ${pErr.message}`);
   if (!profile) throw new AuthError("User profile not found.");
-
   if (profile.status === "blocked") {
     throw new ForbiddenError("Your account has been blocked.");
   }
-
-  // 2. Resolve the authoritative workspace membership
-  const { data: membership, error: mErr } = await supabase
-    .from("workspace_members")
-    .select("workspace_id, role, status")
-    .eq("user_id", userId)
-    .eq("status", "active")
-    .maybeSingle();
   if (mErr) throw new Error(`Membership lookup failed: ${mErr.message}`);
 
   // A user with no active membership has no workspace (e.g. invited but not joined)

@@ -10,8 +10,9 @@ import { facebookCommentAI } from "./facebookComment.js";
 import { messengerAI } from "./messenger.js";
 import { businessIntelAI } from "./businessIntel.js";
 import { adminPanelAI } from "./adminPanel.js";
+import { supportAI } from "./support.js";
 
-const _employees = [facebookCommentAI, messengerAI, businessIntelAI, adminPanelAI];
+const _employees = [facebookCommentAI, messengerAI, businessIntelAI, adminPanelAI, supportAI];
 const _byId = new Map(_employees.map((e) => [e.id, e]));
 
 export function listEmployees() {

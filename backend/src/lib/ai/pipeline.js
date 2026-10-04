@@ -250,9 +250,9 @@ function _buildUserPrompt(input, context, employee) {
   if (employee.outputMode === "structured") {
     const audienceLabel = employee.audience === "owner" ? "the owner" : "the customer";
     parts.push(`\n--- Output format ---`);
-    parts.push(`Respond with a JSON object: { "reply": "<your response to ${audienceLabel}>", "action": "<HEART_ACTION or null>", "data": {<action payload if action is not null> } }`);
-    parts.push(`If no business action is needed, set "action" to null and omit "data".`);
-    parts.push(`For business mutations, "action" and "data" are mandatory and must match an allowed action schema.`);
+    parts.push(`For a normal response to ${audienceLabel}, return { "reply": "<your response>", "action": null }. Use actual JSON null, never the strings "null" or "NONE"; omit "data".`);
+    parts.push(`The only permitted actions for this employee are: ${employee.allowedActions.join(", ") || "none"}.`);
+    parts.push(`Only when an authorized action is ready, return { "reply": "<your response>", "action": "<permitted HEART_ACTION>", "data": {<validated action payload>} }. Respect this employee's information-gathering and confirmation requirements.`);
   }
 
   return parts.join("\n");
