@@ -3,6 +3,7 @@ import { Router } from "express";
 import { orderHandlers } from "../../lib/heart/orders.js";
 import { withIdempotency } from "../../lib/idempotency.js";
 import { sendData, sendCreated, transformList, transformRow } from "../../lib/response.js";
+import { requireEntitlement } from "../../lib/entitlement.js";
 
 // Add computed profit field (total - cost_total) to each order
 function transformOrder(row) {
@@ -36,7 +37,7 @@ ordersRouter.get("/:id/items", async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-ordersRouter.post("/", async (req, res, next) => {
+ordersRouter.post("/", requireEntitlement, async (req, res, next) => {
   try {
     const idempotencyKey = req.headers["idempotency-key"];
     const result = await withIdempotency(req.ctx, idempotencyKey, "CREATE_ORDER", () =>
