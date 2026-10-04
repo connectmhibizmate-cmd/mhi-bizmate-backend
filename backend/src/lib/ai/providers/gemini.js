@@ -20,7 +20,7 @@ export class GeminiAdapter extends ProviderAdapter {
     super({
       id: "gemini",
       name: "Google Gemini",
-      models: ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-2.5-pro"],
+      models: ["gemini-flash-latest", "gemini-2.5-flash", "gemini-2.5-pro"],
       envKey: "GEMINI_API_KEY",
       envKeyAlias: "GOOGLE_AI_API_KEY",
     });
