@@ -17,6 +17,8 @@ import { automationRouter } from "./automation.js";
 import { heartRouter } from "./heart.js";
 import { aiRouter } from "./ai.js";
 import { metaRouter } from "./meta.js";
+import { subscriptionRouter } from "./subscription.js";
+import { adminRouter } from "./admin.js";
 
 export const v1Router = Router();
 
@@ -38,3 +40,5 @@ v1Router.use("/automation", automationRouter);
 v1Router.use("/heart", heartRouter);
 v1Router.use("/ai", aiRouter);
 v1Router.use("/meta", metaRouter);
+v1Router.use("/subscription", subscriptionRouter);
+v1Router.use("/admin", adminRouter);
