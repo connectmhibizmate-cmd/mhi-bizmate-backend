@@ -17,6 +17,7 @@ import { Router } from "express";
 import { listProviders, getConfiguredProviders } from "../../lib/ai/providers/index.js";
 import { listEmployees, getEmployee } from "../../lib/ai/employees/index.js";
 import { getAiUsageSummary } from "../../lib/ai/usage.js";
+import { requireEntitlement } from "../../lib/entitlement.js";
 import { ForbiddenError, ValidationError } from "../../lib/errors.js";
 
 export const aiRouter = Router();
@@ -87,7 +88,7 @@ aiRouter.get("/employees/:id", (req, res, next) => {
 //   "customer" employees (messenger_ai, facebook_comment_ai): any workspace member.
 //   "owner" employees (business_intel_ai): FOUNDER or CO_FOUNDER only.
 //   "admin" employees (admin_panel_ai): platform admins only.
-aiRouter.post("/employees/:id/execute", async (req, res, next) => {
+aiRouter.post("/employees/:id/execute", requireEntitlement, async (req, res, next) => {
   try {
     const employee = getEmployee(req.params.id);
     if (!employee) throw new ForbiddenError("Employee not found");
