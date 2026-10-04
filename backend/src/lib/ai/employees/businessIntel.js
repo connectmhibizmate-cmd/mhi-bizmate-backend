@@ -23,7 +23,7 @@ export const businessIntelAI = new AiEmployee({
   outputMode: "text", // READ-ONLY — no structured actions
   allowedActions: [], // EMPTY — this employee is read-only in this phase
   defaultProvider: "gemini",
-  defaultModel: "gemini-2.5-pro",
+  defaultModel: "gemini-flash-latest",
   taskTypes: [
     "performance_analysis",
     "strategy_recommendation",
